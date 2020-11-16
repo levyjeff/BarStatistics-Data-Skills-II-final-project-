@@ -80,6 +80,13 @@ df17 = pd.read_csv('pass_rates_2017.csv')
 df18 = pd.read_csv('pass_rates_2018.csv')
 df19 = pd.read_csv('pass_rates_2019.csv')
 
+# Can I consolidate this? Or should I not bother and make one big dataframe rather than a bunch of small ones?
+del df15['Unnamed: 0']
+del df16['Unnamed: 0']
+del df17['Unnamed: 0']
+del df18['Unnamed: 0']
+del df19['Unnamed: 0']
+
 '''
 Generate poverty rate dataframes
 '''
@@ -205,8 +212,8 @@ def rename_ny(dis_df):
 
 def remove_non_states(dis_df):
     dis_df['Jurisdiction'] = dis_df['Jurisdiction'].replace("'","", regex=True)
-    only_states = dis_df[dis_df['Jurisdiction'].isin(df17['Jurisdiction'])].reset_index(drop=True)
-    return(only_states)
+    dis_df = dis_df[dis_df['Jurisdiction'].isin(df17['Jurisdiction'])].reset_index(drop=True)
+    return(dis_df)
 
 def numeric_columns(dis_df):
     for col in dis_df:
@@ -239,4 +246,19 @@ def get_disc(a):
     d = consolidate(c)
     return(d)
 
+df15 = pd.merge(df15, get_disc(dis15))
+df16 = pd.merge(df16, get_disc(dis16))
+df17 = pd.merge(df17, get_disc(dis17))
+df18 = pd.merge(df18, get_disc(dis18))
+
+'''
+Rudimentary plotting
+'''
+
+df15 = df15.sort_values('Pass_Rate')
+
+import matplotlib.pyplot as plt
+fig, ax = plt.subplots()
+ax.plot(df15['Jurisdiction'], df15['Pass_Rate'])
+ax.plot(df15['Jurisdiction'], df15['Poverty_Rate'])
 
