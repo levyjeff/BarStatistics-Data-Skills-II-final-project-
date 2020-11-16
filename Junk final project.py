@@ -49,3 +49,54 @@ for x in range(len(pov_rates)):
         if pov_rates[2019][x] == year:
             year_locs.append(x)
 year_locs
+
+'''
+Generate lawyer discipline dataframes
+'''
+
+############## NEXT STEP IS TO GENERALIZE EVERYTHING EXCEPT NEW YORK ROW ADJUSTMENTS
+
+# Read in the PDF as a CSV
+# pip install tabula-py
+import tabula
+file = 'https://www.americanbar.org/content/dam/aba/administrative/professional_responsibility/2018-chart-1-part-a.pdf'
+tabula.convert_into(file, 'discipline_2017.csv', output_format='csv', pages='5-7')
+dis17 = pd.read_csv('discipline_2017.csv', encoding='cp1252')
+
+# Adjust columns
+dis17.columns=['Jurisdiction', 'Num_Lawyers', 'Num_Complaints', 'Central_Intake', 'Separate']
+del dis17['Central_Intake']
+del dis17['Separate']
+
+# Rename New York rows, since divided into districts
+for num in range(37, 47):
+    dis17.loc[num][0] = 'New York'
+
+# Remove rows if not state name
+x = dis17[dis17['Jurisdiction'].isin(df17['Jurisdiction'])].reset_index()
+del x['index']
+
+# Change numeric column types to integer and add complaints-per-lawyer ratio column
+for col in x:
+    if col != 'Jurisdiction':
+        x[col] = x[col].replace([',', 'N', '\\*'],'', regex=True)
+        for num in range(0, len(x)):
+            try:
+                int(x[col][num])
+            except ValueError:
+                x[col][num] = 0
+x = x.astype(dtype={'Num_Lawyers':int, 'Num_Complaints':int})
+
+# Remove rows with only 0s and consolidate New York rows
+x = x[(x['Num_Lawyers'] != 0) & (x['Num_Complaints'] != 0)]
+ny_lawyers = x.loc[x['Jurisdiction'] == 'New York'].sum()[1]
+ny_complaints = x.loc[x['Jurisdiction'] == 'New York'].sum()[2]
+ny = pd.DataFrame([['New York', ny_lawyers, ny_complaints]], columns=['Jurisdiction', 'Num_Lawyers', 'Num_Complaints'])
+x = x[x['Jurisdiction'] != 'New York']
+x = x.append(ny).sort_values('Jurisdiction').reset_index()
+x['Complaints_Per_Lawyer'] = x['Num_Complaints']/x['Num_Lawyers']
+del x['index']
+
+# Merge with 2017 dataframe
+df17 = pd.merge(df17, x)
+df17

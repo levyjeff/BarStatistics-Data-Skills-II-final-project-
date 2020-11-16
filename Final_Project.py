@@ -2,6 +2,7 @@
 Initial housekeeping
 '''
 
+import numpy as np
 import os
 import pandas as pd
 import requests
@@ -67,17 +68,17 @@ pass_rate_dict = {2015:'https://thebarexaminer.org/statistics/2015-statistics/pe
 }
 
 for year in pass_rate_dict.keys():
-    if os.path.isfile(path+'f\pass_rates_{year}.csv') == True:
+    if os.path.isfile(path+f'\\pass_rates_{year}.csv') == True:
         pass
     else:
         pass_rate_df = generate_df(pass_rate_dict[year])
         pass_rate_df.to_csv(f'pass_rates_{year}.csv')
 
-df15 = pd.read_csv('pass_rates_2015')
-df16 = pd.read_csv('pass_rates_2016')
-df17 = pd.read_csv('pass_rates_2017')
-df18 = pd.read_csv('pass_rates_2018')
-df19 = pd.read_csv('pass_rates_2019')
+df15 = pd.read_csv('pass_rates_2015.csv')
+df16 = pd.read_csv('pass_rates_2016.csv')
+df17 = pd.read_csv('pass_rates_2017.csv')
+df18 = pd.read_csv('pass_rates_2018.csv')
+df19 = pd.read_csv('pass_rates_2019.csv')
 
 '''
 Generate poverty rate dataframes
@@ -89,11 +90,12 @@ if os.path.isfile(path+'\pov_rates.csv') == True:
 else:
     pov_rates = pd.read_excel('https://www2.census.gov/programs-surveys/cps/tables/time-series/historical-poverty-people/hstpov21.xlsx', header=3)
     pov_rates.to_csv('pov_rates.csv')
+pov_rates = pd.read_csv('pov_rates.csv')
 
 def get_pov(start, end):
     state_rate = []
     for a_num in range(start, end):
-        state_rate.append([pov_rates[2019][a_num], pov_rates['Unnamed: 4'][a_num]])
+        state_rate.append([pov_rates['2019'][a_num], float(pov_rates['Unnamed: 4'][a_num])/100])
     return(pd.DataFrame(state_rate, columns=['Jurisdiction', 'Poverty_Rate']))
 
 pov15 = get_pov(266, 317)
@@ -106,7 +108,7 @@ pov19 = get_pov(1, 52)
 Merge bar exam and poverty rate dataframes
 '''
 
-# Note: this will drop US territories
+# Note: this will drop US territories, leaving only states and Washington, D.C.
 df15 = pd.merge(df15, pov15)
 df16 = pd.merge(df16, pov16)
 df17 = pd.merge(df17, pov17)
@@ -117,117 +119,124 @@ df19 = pd.merge(df19, pov19)
 Generate lawyer discipline dataframes
 '''
 
-############## NEXT STEP IS TO GENERALIZE EVERYTHING EXCEPT NEW YORK ROW ADJUSTMENTS
+# Get initial dataframes from PDFs (2015 and 2016 need to be broken up by page, partially cleaned, then recombined)
 
-# Read in the PDF as a CSV
-# pip install tabula-py
-import tabula
-file = 'https://www.americanbar.org/content/dam/aba/administrative/professional_responsibility/2018-chart-1-part-a.pdf'
-tabula.convert_into(file, 'discipline_2017.csv', output_format='csv', pages='5-7')
-dis17 = pd.read_csv('discipline_2017.csv', encoding='cp1252')
+discipline_dict_1 = {2015:'https://www.americanbar.org/content/dam/aba/administrative/professional_responsibility/2015_sold_results.pdf',
+                  2016:'https://www.americanbar.org/content/dam/aba/administrative/professional_responsibility/2016sold_results.pdf'}
 
-# Adjust columns
-dis17.columns=['Jurisdiction', 'Num_Lawyers', 'Num_Complaints', 'Central_Intake', 'Separate']
-del dis17['Central_Intake']
-del dis17['Separate']
+for year in discipline_dict_1.keys():
+    if os.path.isfile(path+f'\discipline_{year}.csv') == True:
+        pass
+    else:
+        tabula.convert_into(discipline_dict_1[year], f'discipline_{year}_a.csv', output_format='csv', pages='5')
+        tabula.convert_into(discipline_dict_1[year], f'discipline_{year}_b.csv', output_format='csv', pages='6')
+        tabula.convert_into(discipline_dict_1[year], f'discipline_{year}_c.csv', output_format='csv', pages='7')
 
-# Rename New York rows, since divided into districts
-for num in range(37, 47):
-    dis17.loc[num][0] = 'New York'
+dis15a = pd.read_csv('discipline_2015_a.csv', encoding='cp1252', header=6)
+dis15a.columns=['garbage', 'Jurisdiction', 'junk', 'Num_Lawyers', 'Num_Complaints', 'Central_Intake', 'Separate']
+del dis15a['garbage']
+del dis15a['junk']
+dis15a['Jurisdiction'][13] = 'Iowa'
 
-# Remove rows if not state name
-x = dis17[dis17['Jurisdiction'].isin(df17['Jurisdiction'])].reset_index()
-del x['index']
+dis15b = pd.read_csv('discipline_2015_b.csv', encoding='cp1252', header=6)
+dis15b.columns=['garbage', 'Jurisdiction', 'junk', 'Num_Lawyers', 'Num_Complaints', 'Central_Intake', 'Separate']
+dis15b['Jurisdiction'][0] = 'Mississippi'
+dis15b['Jurisdiction'][1] = 'to be deleted'
+dis15b['Jurisdiction'][15] = 'New York: 3rd Department'
+dis15b['Num_Lawyers'][15] = '65,000'
+dis15b['Num_Complaints'][15] = '2,098'
+dis15b['Jurisdiction'][3] = 'Montana'
+dis15b['Jurisdiction'][23] = 'Oregon'
+del dis15b['garbage']
+del dis15b['junk']
 
-# Change numeric column types to integer and add complaints-per-lawyer ratio column
-for col in x:
-    if col != 'Jurisdiction':
-        x[col] = x[col].replace([',', 'N', '\\*'],'', regex=True)
-        for num in range(0, len(x)):
-            try:
-                int(x[col][num])
-            except ValueError:
-                x[col][num] = 0
-x = x.astype(dtype={'Num_Lawyers':int, 'Num_Complaints':int})
+dis15c = pd.read_csv('discipline_2015_c.csv', encoding='cp1252', header=4)
+dis15c.columns=['Jurisdiction', 'Num_Lawyers', 'Num_Complaints', 'Central_Intake', 'Separate']
 
-# Remove rows with only 0s and consolidate New York rows
-x = x[(x['Num_Lawyers'] != 0) & (x['Num_Complaints'] != 0)]
-ny_lawyers = x.loc[x['Jurisdiction'] == 'New York'].sum()[1]
-ny_complaints = x.loc[x['Jurisdiction'] == 'New York'].sum()[2]
-ny = pd.DataFrame([['New York', ny_lawyers, ny_complaints]], columns=['Jurisdiction', 'Num_Lawyers', 'Num_Complaints'])
-x = x[x['Jurisdiction'] != 'New York']
-x = x.append(ny).sort_values('Jurisdiction').reset_index()
-x['Complaints_Per_Lawyer'] = x['Num_Complaints']/x['Num_Lawyers']
-del x['index']
+dis16a = pd.read_csv('discipline_2016_a.csv', encoding='cp1252', header=4)
+del dis16a['Unnamed: 0']
+del dis16a['Unnamed: 1']
+del dis16a['Unnamed: 3']
+dis16a.columns=['Jurisdiction', 'Num_Lawyers', 'Num_Complaints', 'Central_Intake', 'Separate']
 
-# Merge with 2017 dataframe
-df17 = pd.merge(df17, x)
-df17
+dis16b = pd.read_csv('discipline_2016_b.csv', encoding='cp1252', header=4)
+dis16b.columns=['garbage', 'trash', 'Jurisdiction', 'junk', 'Num_Lawyers', 'Num_Complaints', 'Central_Intake', 'Separate']
+dis16b['Jurisdiction'][13] = 'New York: 3rd Department'
+dis16b['Num_Lawyers'][13] = '70,000'
+dis16b['Num_Complaints'][13] = '1,239'
+del dis16b['garbage']
+del dis16b['trash']
+del dis16b['junk']
 
-'''
-Generate lawyer discipline dataframes - GENERALIZED
-'''
+dis16c = pd.read_csv('discipline_2016_c.csv', encoding='cp1252', header=4)
+dis16c.columns=['Jurisdiction', 'Num_Lawyers', 'Num_Complaints', 'Central_Intake', 'Separate']
 
-# Read in the PDFs as CSVs if not already in path
-
-discipline_dict = {2015:'https://www.americanbar.org/content/dam/aba/administrative/professional_responsibility/2015_sold_results.pdf',
-                  2016:'https://www.americanbar.org/content/dam/aba/administrative/professional_responsibility/2016sold_results.pdf',
-                  2017:'https://www.americanbar.org/content/dam/aba/administrative/professional_responsibility/2017sold-results.pdf',
+discipline_dict_2 = {2017:'https://www.americanbar.org/content/dam/aba/administrative/professional_responsibility/2017sold-results.pdf',
                   2018:'https://www.americanbar.org/content/dam/aba/administrative/professional_responsibility/2018sold-results.pdf'
 }
 
-for year in discipline_dict.keys():
-    if os.path.isfile(path+'f\discipline_{year}.csv') == True:
+for year in discipline_dict_2.keys():
+    if os.path.isfile(path+f'\discipline_{year}.csv') == True:
         pass
     else:
-        tabula.convert_into(file, f'discipline_{year}.csv', output_format='csv', pages='5-7')
+        tabula.convert_into(discipline_dict_2[year], f'discipline_{year}.csv', output_format='csv', pages='5-7')
 
-dis15 = pd.read_csv('discipline_2015')
-dis16 = pd.read_csv('discipline_2016')
-dis17 = pd.read_csv('discipline_2017')
-dis18 = pd.read_csv('discipline_2018')
+dis15 = dis15a.append(dis15b).append(dis15c).reset_index(drop=True)
+dis16 = dis16a.append(dis16b).append(dis16c).reset_index(drop=True)
+dis17 = pd.read_csv('discipline_2017.csv', encoding='cp1252', header=7)
+dis18 = pd.read_csv('discipline_2018.csv', encoding='cp1252')
 
+dis_dfs = [dis15, dis16, dis17, dis18]
 
-
-file = 'https://www.americanbar.org/content/dam/aba/administrative/professional_responsibility/2018-chart-1-part-a.pdf'
-tabula.convert_into(file, 'discipline_2017.csv', output_format='csv', pages='5-7')
-dis17 = pd.read_csv('discipline_2017.csv', encoding='cp1252')
-
-# Adjust columns
-dis17.columns=['Jurisdiction', 'Num_Lawyers', 'Num_Complaints', 'Central_Intake', 'Separate']
-del dis17['Central_Intake']
-del dis17['Separate']
+def adjust_columns(dis_df):
+    dis_df.columns=['Jurisdiction', 'Num_Lawyers', 'Num_Complaints', 'Central_Intake', 'Separate']
+    del dis_df['Central_Intake']
+    del dis_df['Separate']
 
 # Rename New York rows, since divided into districts
-for num in range(37, 47):
-    dis17.loc[num][0] = 'New York'
+def rename_ny(dis_df):
+# Approach to finding first instance of "New York" derived from https://www.geeksforgeeks.org/python-pandas-series-str-find/
+    first_ny_list = dis_df['Jurisdiction'].str.find('New York')
+    first_ny = (first_ny_list.values == 0).argmax()
+    last_ny_list = dis_df['Jurisdiction'].str.find('North Carolina')
+    last_ny = (last_ny_list.values == 0).argmax()
+    for num in range(first_ny, last_ny):
+        dis_df.loc[num][0] = 'New York'
 
-# Remove rows if not state name
-x = dis17[dis17['Jurisdiction'].isin(df17['Jurisdiction'])].reset_index()
-del x['index']
+def remove_non_states(dis_df):
+    dis_df['Jurisdiction'] = dis_df['Jurisdiction'].replace("'","", regex=True)
+    only_states = dis_df[dis_df['Jurisdiction'].isin(df17['Jurisdiction'])].reset_index(drop=True)
+    return(only_states)
 
-# Change numeric column types to integer and add complaints-per-lawyer ratio column
-for col in x:
-    if col != 'Jurisdiction':
-        x[col] = x[col].replace([',', 'N', '\\*'],'', regex=True)
-        for num in range(0, len(x)):
-            try:
-                int(x[col][num])
-            except ValueError:
-                x[col][num] = 0
-x = x.astype(dtype={'Num_Lawyers':int, 'Num_Complaints':int})
+def numeric_columns(dis_df):
+    for col in dis_df:
+        if col != 'Jurisdiction':
+            dis_df[col] = dis_df[col].replace([',', 'N', '\\*'],'', regex=True)
+            for num in range(0, len(dis_df)):
+                try:
+                    int(dis_df[col][num])
+                except ValueError:
+                    dis_df[col][num] = 0
+    dis_df = dis_df.astype(dtype={'Num_Lawyers':int, 'Num_Complaints':int})
+    return(dis_df)
 
-# Remove rows with only 0s and consolidate New York rows
-x = x[(x['Num_Lawyers'] != 0) & (x['Num_Complaints'] != 0)]
-ny_lawyers = x.loc[x['Jurisdiction'] == 'New York'].sum()[1]
-ny_complaints = x.loc[x['Jurisdiction'] == 'New York'].sum()[2]
-ny = pd.DataFrame([['New York', ny_lawyers, ny_complaints]], columns=['Jurisdiction', 'Num_Lawyers', 'Num_Complaints'])
-x = x[x['Jurisdiction'] != 'New York']
-x = x.append(ny).sort_values('Jurisdiction').reset_index()
-x['Complaints_Per_Lawyer'] = x['Num_Complaints']/x['Num_Lawyers']
-del x['index']
+# Remove rows with only 0s, consolidate New York rows, and add column with complaints per lawyer
+def consolidate(dis_df):
+    dis_df = dis_df[(dis_df['Num_Lawyers'] != 0) & (dis_df['Num_Complaints'] != 0)]
+    ny_lawyers = dis_df.loc[dis_df['Jurisdiction'] == 'New York'].sum()[1]
+    ny_complaints = dis_df.loc[dis_df['Jurisdiction'] == 'New York'].sum()[2]
+    ny = pd.DataFrame([['New York', ny_lawyers, ny_complaints]], columns=['Jurisdiction', 'Num_Lawyers', 'Num_Complaints'])
+    dis_df = dis_df[dis_df['Jurisdiction'] != 'New York']
+    dis_df = dis_df.append(ny).sort_values('Jurisdiction').reset_index(drop=True)
+    dis_df['Complaints_Per_Lawyer'] = dis_df['Num_Complaints']/dis_df['Num_Lawyers']
+    return(dis_df)
 
-# Merge with 2017 dataframe
-df17 = pd.merge(df17, x)
-df17
+def get_disc(a):
+    adjust_columns(a)
+    rename_ny(a)
+    b = remove_non_states(a)
+    c = numeric_columns(b)
+    d = consolidate(c)
+    return(d)
+
 

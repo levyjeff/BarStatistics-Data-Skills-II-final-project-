@@ -1,68 +1,103 @@
-Jurisdiction,1.  # of Lawyers with,2.  # of Complaints,2a.  Central Intake,2b.  # of Complaints
-"",Active License,Received by,or Consumer,Handled Separately by
-"",,Disciplinary Agency,Assistance Program,Central Intake / Consumer
-"",,,,Assistance Program
-Alabama,"13,841","1,176",Yes,0
-Alaska,"3,072",227,No,N/A
-Arizona,"18,643","3,221",Yes,N/A
-Arkansas,"9,042",616,No,0
-Colorado,"26,590","3,477",Yes,N/A
-Delaware,"3,562",151,N/A,N/A
-District of Columbia,"78,310",942,No,N/A
-Florida,"87,893","3,976",Yes,"14,642"
-Georgia,"39,100","1,991",Yes,"10,891"
-Hawai'i,"4,879",313,No,N/A
-Idaho,"5,205",330,N/A,N/A
-Illinois,"72,062","5,199",Yes,N/A
-Indiana,"18,517","1,485",N/A,N/A
-Iowa,"9,800",948,No,N/A
-Kansas,"11,248",893,No,N/A
-Kentucky,"18,645","1,104",Yes,N/A
-Louisiana,"22,306","2,800",Yes,0
-Maine,"5,390",223,Yes,70
-Maryland,"39,890","2,015",No,N/A
-Michigan,"42,078","1,944",Yes,N/A
-Jurisdiction,1.  # of Lawyers with,2.  # of Complaints,2a.  Central Intake,2b.  # of Complaints
-"",Active License,Received by,or Consumer,Handled Separately by
-"",,Disciplinary Agency,Assistance Program,Central Intake / Consumer
-"",,,,Assistance Program
-Minnesota,"25,241","1,110",No,N/A
-Mississippi,"9,048",516,Yes,0
-Missouri,"30,937","1,830",Yes,N/A
-Nebraska,"6,933",431,No,N/A
-Nevada,"11,700","1,728",Yes,Unknown
-New Hampshire,"5,200",219,No,N/A
-New Jersey,"75,131","3,600",No,N/A
-New Mexico,"7,200",663,No,N/A
-New York: 2nd Department,,,,
-"2nd, 11th & 13th Districts","18,728","1,723",No,N/A
-New York: 2nd Department,,,,
-9th District,"15,860","1,001",No,N/A
-New York: 2nd Department,,,,
-10th District,"23,019","2,050",Yes,N/A
-New York: 4th Department,,,,
-"5th, 7th & 8th Districts","14,765","1,743",No,N/A
-North Carolina,"28,975","1,305",Yes,"8,530"
-North Dakota,"3,039",161,No,N/A
-Ohio,"44,073","2,598",N/A,N/A
-Oklahoma,"17,859","1,187",No,N/A
-Jurisdiction,1.  # of Lawyers with,2.  # of Complaints,2a.  Central Intake,2b.  # of Complaints
-"",Active License,Received by,or Consumer,Handled Separately by
-"",,Disciplinary Agency,Assistance Program,Central Intake / Consumer
-"",,,,Assistance Program
-Oregon,"15,211","1,435N",Yes,N/A
-Pennsylvania,"65,617","3,707",N/A,N/A
-Rhode Island,"5,245",311,No,N/A
-Tennessee,"22,832","1,552",Yes,"2,676"
-Texas,"100,000","7,640",Yes,N/A
-Utah,"9,427",755,Yes,627
-Vermont,"2,728",147,Yes,"1,263"
-Virginia,"31,667","3,304",Yes,N/A
-Washington,"31,919","2,113",Yes,N/A
-West Virginia,"6,934",634,No,N/A
-Wisconsin,"25,283","1,760",Yes,N/A
-Wyoming,"2,900",162,Yes,N/A
-"",,* = Estimated,,
-TOTAL*,"1,176,296","76,981",,
-AVERAGE*,"49,012","1,632",,
-MEDIAN*,"18,580","1,246",,
+Jurisdiction
+Jurisdiction
+Jurisdiction,"1.  # of Lawyerswith ActiveLicense","2.  # of ComplaintsReceived byDisciplinary Agency","2a.  Central Intakeor ConsumerAssistance Program",,,
+"",,,1.  # of Lawyers,2.  # of Complaints,2a.  Central Intake,2b.  # of Complaints Handled
+"",Jurisdiction,with Active,Received by,or Consumer,Separately by Central Intake /,
+"",,,License,Disciplinary Agency,Assistance Program,Consumer Assistance Program
+"",,,,,,
+"",Alabama,,"13,761","1,344",Yes,0
+"",Alaska,,"3,102",181,No,N/A
+"",ArizonaN,,"18,422","3,127",Yes,N/A
+"",Arkansas,,"9,783",657,No,0
+"",Colorado,,"25,991","3,505",Yes,N/A
+"",Delaware,,"4,221",174,N/A,N/A
+"",District of Columbia,,"75,626",929,No,N/A
+"",Florida,,"85,356","7,558",Yes,N/A
+"",Georgia,,"37,561","3,219",Yes,"11,259"
+"",Hawai'i,,"4,834",292,No,N/A
+"",Idaho,,"4,971",337,N/A,N/A
+"",Illinois,,"82,495","5,648",Yes,N/A
+"",Indiana,,"18,495","1,715",N/A,N/A
+"",IowaN,,"9,500",917,No,N/A
+"",Kansas,,"11,141",801,No,N/A
+"",Kentucky,,"18,140","1,168",Yes,N/A
+"",Louisiana,,"21,981","2,933",Yes,0
+"",Maine,,"5,302",220,Yes,N/A
+"",Maryland,,"38,938","2,144",No,N/A
+"",Massachusetts,,"59,217",734,Yes,"3,976"
+"",Michigan,,"41,608","2,014",No,N/A
+"",Minnesota,,"28,858","1,210",No,N/A
+"1.  # of Lawyerswith ActiveLicense"
+1.  # of Lawyers
+with Active
+License
+"2.  # of ComplaintsReceived byDisciplinary Agency"
+2.  # of Complaints
+Received by
+Disciplinary Agency
+"2a.  Central Intakeor ConsumerAssistance Program"
+2a.  Central Intake
+or Consumer
+Assistance Program
+Jurisdiction
+Jurisdiction
+Jurisdiction,"1.  # of Lawyerswith ActiveLicense","2.  # of ComplaintsReceived byDisciplinary Agency","2a.  Central Intakeor ConsumerAssistance Program",,,
+"",,,1.  # of Lawyers,2.  # of Complaints,2a.  Central Intake,2b.  # of Complaints Handled
+"",Jurisdiction,with Active,Received by,or Consumer,Separately by Central Intake /,
+"",,,License,Disciplinary Agency,Assistance Program,Consumer Assistance Program
+"",,,,,,
+"",,,"9,116",468,Yes,0
+"",Mississippi,,,,,
+"",Missouri,,"26,136","1,995",Yes,N/A
+"",MontanaN,,"3,877",274,No,N/A
+"",Nebraska,,"6,900",329,No,N/A
+"",New Hampshire,,"5,500","23,235",No,N/A
+"",New Jersey,,"75,526","3,600",No,N/A
+"",New Mexico,,"6,900",644,No,N/A
+"",New York: 1st Department,,"92,998","3,793",No,N/A
+"",New York: 2nd Department/,,"18,346","1,611",No,N/A
+"","2nd, 11th & 13th Districts",,,,,
+"",New York: 2nd Department/,,"15,734",957,No,N/A
+"",9th District,,,,,
+"",New York: 2nd Department/,,"22,728","1,530",Yes,N/A
+"",10th District,,,,,
+New York: 3rd Department,"65,000","2,098",N/A,N/A,,
+"",New York: 3rd Department,,,,,
+"",New York: 4th Department/,,"14,588","1,660",No,N/A
+"","5th, 7th & 8th Districts",,,,,
+"",North Carolina,,"27,938","1,331",Yes,"7,087"
+"",North Dakota,,"2,997",189,No,N/A
+"",Ohio,,"44,157","4,122",N/A,N/A
+"",Oklahoma,,"18,108","1,310",No,N/A
+"",OregonN,,"15,178","2,043",Yes,N/A
+"1.  # of Lawyerswith ActiveLicense"
+1.  # of Lawyers
+with Active
+License
+"2.  # of ComplaintsReceived byDisciplinary Agency"
+2.  # of Complaints
+Received by
+Disciplinary Agency
+"2a.  Central Intakeor ConsumerAssistance Program"
+2a.  Central Intake
+or Consumer
+Assistance Program
+New York: 3rd Department
+New York: 3rd Department
+"",,,,
+"",1.  # of Lawyers,2.  # of Complaints,2a.  Central Intake,2b.  # of Complaints Handled
+Jurisdiction,with Active,Received by,or Consumer,Separately by Central Intake /
+"",License,Disciplinary Agency,Assistance Program,Consumer Assistance Program
+"",,,,
+Pennsylvania,"64,750","4,018",N/A,N/A
+Rhode Island,"5,576",357,No,N/A
+South Carolina,"12,313","1,542",N/A,N/A
+Tennessee,"21,980","1,204",Yes,"3,484"
+Texas,"98,671","7,760",Yes,N/A
+Utah,"9,148",823,Yes,529
+Vermont,"2,700",208,Yes,827
+Virginia,"31,247","3,346",Yes,N/A
+Washington,"31,126","2,242",Yes,N/A
+West Virginia,"6,669",551,No,N/A
+Wisconsin,"25,169","1,979",Yes,N/A
+Wyoming,"2,879",129,Yes,N/A
