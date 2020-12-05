@@ -4,6 +4,8 @@ Initial housekeeping
 
 import os
 import pandas as pd
+import numpy as np
+import us
 import requests
 from bs4 import BeautifulSoup
 import tabula
@@ -11,10 +13,11 @@ import tabula
 path = r'C:\Users\bethk\Desktop\Data_Skills_II\BarStatistics'
 os.chdir(path)
 headers = {'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36'}
+state_names = [state.name for state in us.states.STATES] # List comprehension adapted from https://stackoverflow.com/questions/47168881/how-to-get-a-list-of-us-state-names-from-us-1-0-0-package
 
 
 '''
-Pass rate dataframe
+Bar pass rate dataframe
 '''
 
 pass_rate_dict = {2015:'https://thebarexaminer.org/statistics/2015-statistics/persons-taking-and-passing-the-2015-bar-examination/',
@@ -223,7 +226,7 @@ def rename_ny(dis_df):
 def remove_non_states(dis_df):
     dis_df['Jurisdiction'] = dis_df['Jurisdiction'].replace("'","", regex=True)
     dis_df = dis_df[dis_df['Jurisdiction'].isin(
-passrates_df(2015)['Jurisdiction'])].reset_index(drop=True)
+state_names)].reset_index(drop=True)
     return(dis_df)
 
 def numeric_columns(dis_df):
@@ -271,13 +274,65 @@ get_disc(2015)
 # Hawaii has disappeared from 2017 and 2018 but we're getting close
 
 '''
-Merge bar exam and poverty rate dataframes
+Unemployment rates dataframe
+'''
+
+def unemprates_df():
+# Get the data
+    if os.path.isfile(path+ r'\unemp_rates.csv') == True:
+        pass
+    else:
+        unemp_rates = pd.read_excel('https://www.ers.usda.gov/webdocs/DataFiles/48747/Unemployment.xls?v=4751.8', header=7)
+        unemp_rates.to_csv('unemp_rates.csv')
+    unemp = pd.read_csv('unemp_rates.csv')[['area_name', 'Unemployment_rate_2015', 'Unemployment_rate_2016', 'Unemployment_rate_2017', 'Unemployment_rate_2018']]
+# Adjust the data
+    unemp = unemp[unemp['area_name'].isin(state_names)].reset_index(drop=True)
+    unemp = unemp.rename(columns={'area_name': 'Jurisdiction'})
+    return(unemp)
+
+'''
+Educational attainment dataframe
+'''
+
+def edrates_df():
+    if os.path.isfile(path+ r'\ed_attainment.csv') == True:
+        pass
+    else:
+        ed = pd.read_excel('https://www.ers.usda.gov/webdocs/DataFiles/48747/Education.xls?v=4751.8', header=4)
+        ed.to_csv('ed_attainment.csv')
+    ed = pd.read_csv('ed_attainment.csv')
+# Remove sub-state data
+    ed = ed[ed['Area name'].isin(state_names)].reset_index(drop=True)
+# Remove duplicate Washington, D.C.
+    ed = ed.drop_duplicates(subset='Area name', inplace=False)
+# Restrict columns to percentages, simplify column names, make percentages decimals
+    ed = ed[['Area name',
+       'Percent of adults with less than a high school diploma, 2014-18',
+       'Percent of adults with a high school diploma only, 2014-18',
+       "Percent of adults completing some college or associate's degree, 2014-18",
+       "Percent of adults with a bachelor's degree or higher, 2014-18"]]
+    ed.columns = ['Jurisdiction', 'No_HS', 'HS', 'Some_Coll', 'BA']
+    for col in ed.columns:
+        if ed[col].dtype == 'float64':
+            ed[col] = ed[col]/100
+    return(ed)
+
+'''
+Merge dataframes
 '''
 
 def merge_it(year):
     merged = pd.merge(passrates_df(year), povrates_df(year))
     merged = pd.merge(merged, get_disc(year))
+    merged = pd.merge(merged, edrates_df())
+# Add columns for unemployment rate for given year
+    unemp = unemprates_df()
+    unemp = unemp[unemp['Jurisdiction'].isin(
+merged['Jurisdiction'])].reset_index(drop=True)
+    merged['Unemployment_rate'] = unemp[f'Unemployment_rate_{year}']/100
+    merged['Year'] = year
     return(merged)
+
 # Note: this will drop US territories, leaving only states and Washington, D.C. It will also drop states for which no discipline data is avaiable through the ABA.
 
 
