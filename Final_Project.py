@@ -92,6 +92,7 @@ Generate poverty rate dataframes
 '''
 
 # Get poverty rates chart if not in path
+# https://apps.bea.gov/iTable/iTable.cfm?reqid=70&step=1&isuri=1 USE THIS INSTEAD?!?!!?
 if os.path.isfile(path+'\pov_rates.csv') == True:
     pass
 else:
