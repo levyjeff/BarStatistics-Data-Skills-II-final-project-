@@ -99,22 +99,16 @@ racedata = racedata[['NAME', 'POPESTIMATE2015', 'POPESTIMATE2016',
 
 def race_by_state(year):
     r = racedata[['NAME', f'POPESTIMATE{year}', 'Race']]
-# Bring in totals
-    total_df = r.groupby('NAME').sum().reset_index()
-    total_df.rename(columns={f'POPESTIMATE{year}': 'Total'})
-    r = pd.merge(r, total_df)
-
-
-    r['Total'] = r.groupby('NAME').sum().reset_index()
-    return(r)
-
     r = r.groupby(['NAME', 'Race']).sum().reset_index()
     r = r.pivot(index='NAME', columns='Race', values=f'POPESTIMATE{year}').reset_index()
-#    r['Year'] = year
+# Get race numbers as percentages
+    r['Total'] = r.sum(axis=1)
+    for col in r.columns[1:]:
+        r[col] = r[col]/r['Total']
+    del r['Total']
+    r['Year'] = year
     return(r)
 
-y = y.rename(columns={'POPESTIMATE2017': 'Total'})
-z = pd.merge(x, y)
 
 x['Total'] = 0
 

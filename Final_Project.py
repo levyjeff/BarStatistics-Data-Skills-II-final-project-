@@ -449,14 +449,31 @@ alldata = merge_dfs(2015, 2019)
 Regressions
 '''
 
-x = alldata[['Pass_Rate', 'Poverty_Rate', 'Num_Lawyers', 'Unemployment_Rate', 'Year']]
+x = alldata[['Takers', 'Pass_Rate', 'Poverty_Rate',
+       'Num_Lawyers', 'No_HS', 'HS', 'BA', 'Asian, Hispanic', 'Asian, Not Hispanic',
+       'Black, Hispanic', 'Black, Not Hispanic', 'Multiracial, Hispanic',
+       'Multiracial, Not Hispanic', 'Native, Hispanic', 'Native, Not Hispanic',
+       'Pacific, Hispanic', 'Pacific, Not Hispanic', 'White, Hispanic',
+       'White, Not Hispanic', 'Unemployment_Rate', 'Year']]
 y = alldata['Complaints_Per_Lawyer']
 x = sm.add_constant(x)
 model = sm.OLS(y, x).fit()
 predictions = model.predict(x)
 model.summary()
 
-x = alldata[['Poverty_Rate', 'BA', 'Unemployment_Rate', 'Year']]
+x = alldata[['Takers', 'Poverty_Rate',
+       'Num_Lawyers', 'HS','BA', 'Asian, Hispanic', 'Asian, Not Hispanic',
+       'Black, Hispanic', 'Black, Not Hispanic', 'Multiracial, Hispanic',
+       'Multiracial, Not Hispanic', 'Native, Hispanic', 'Native, Not Hispanic',
+       'Pacific, Hispanic', 'Pacific, Not Hispanic', 'White, Hispanic',
+       'White, Not Hispanic', 'Unemployment_Rate', 'Year']]
+y = alldata['Pass_Rate']
+x = sm.add_constant(x)
+model = sm.OLS(y, x).fit()
+predictions = model.predict(x)
+model.summary()
+
+x = alldata[['Poverty_Rate', 'No_HS', 'HS', 'Some_Coll', 'BA', 'Asian, Hispanic', 'Asian, Not Hispanic', 'Black, Hispanic', 'Black, Not Hispanic', 'Multiracial, Hispanic', 'Multiracial, Not Hispanic', 'Native, Hispanic', 'Native, Not Hispanic', 'Pacific, Hispanic', 'Pacific, Not Hispanic', 'White, Hispanic', 'White, Not Hispanic', 'Unemployment_Rate']]
 y = alldata['Pass_Rate']
 x = sm.add_constant(x)
 model = sm.OLS(y, x).fit()
@@ -466,11 +483,19 @@ model.summary()
 '''
 Rudimentary plotting
 '''
+#https://jakevdp.github.io/PythonDataScienceHandbook/04.02-simple-scatter-plots.html
 
-df15 = df15.sort_values('Pass_Rate')
-df16 = df16.sort_values('Pass_Rate')
+avg = alldata.groupby('Jurisdiction').mean().reset_index()
+us.states.mapping('abbr', 'name')
+# Turn into dataframe and merge to get state abbreviations for visualization
+#abbr = pd.DataFrame.from_dict(us.states.mapping('abbr', 'name'), orient='index', columns=['Jurisdiction'])
+
+avg = avg.sort_values('Poverty_Rate')
 
 fig, ax = plt.subplots()
-ax.plot(df15['Jurisdiction'], df15['Pass_Rate'])
-ax.plot(df15['Jurisdiction'], df15['Poverty_Rate'])
+ax.plot(avg['Poverty_Rate'], avg['Pass_Rate'])
+ax.plot(avg['Jurisdiction'], avg['Poverty_Rate'])
 
+
+plt.plot(avg['Jurisdiction'], avg['Poverty_Rate'])
+plt.plot(avg['Jurisdiction'], avg['Pass_Rate'])
