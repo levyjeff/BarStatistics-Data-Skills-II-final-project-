@@ -4,6 +4,7 @@ Initial housekeeping
 
 import os
 import pandas as pd
+import numpy as np
 import us
 
 import requests
@@ -13,6 +14,7 @@ import PyPDF2
 import spacy
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 nlp = spacy.load("en_core_web_sm")
 path = r'C:\Users\bethk\Desktop\Data_Skills_II\BarStatistics'
@@ -70,8 +72,8 @@ def build_df(a_list): # Makes a dataframe from the list
     return(the_df)
 
 def passrates_df(year): # Retrieves or builds the pass rate dataframe
-    if os.path.isfile(path+f'\\pass_rates_{year}.csv') == True:
-        pass_rate_df = pd.read_csv(path+f'\\pass_rates_{year}.csv')
+    if os.path.isfile(os.getcwd()+f'\\pass_rates_{year}.csv') == True:
+        pass_rate_df = pd.read_csv(os.getcwd()+f'\\pass_rates_{year}.csv')
     else:
         pass_rate_df = build_df(create_list(make_table(pass_rate_dict[year])))
         pass_rate_df.to_csv(f'pass_rates_{year}.csv')
@@ -87,7 +89,7 @@ Poverty rates dataframe
 
 def povrates_df(year):
 # Retrieve the CSV
-    if os.path.isfile(path+'\pov_rates.csv') == True:
+    if os.path.isfile(os.getcwd()+'\pov_rates.csv') == True:
         pass
     else:
         pov_rates = pd.read_excel('https://www2.census.gov/programs-surveys/cps/tables/time-series/historical-poverty-people/hstpov21.xlsx', header=4)
@@ -121,7 +123,7 @@ discipline_dict_2 = {2017:'https://www.americanbar.org/content/dam/aba/administr
 
 def dis_15_16_csvs():
     for year in discipline_dict_1.keys():
-        if os.path.isfile(path+f'\discipline_{year}.csv') == True:
+        if os.path.isfile(os.getcwd()+f'\discipline_{year}.csv') == True:
             pass
         else:
             tabula.convert_into(discipline_dict_1[year],
@@ -206,7 +208,7 @@ def consolidate_dis_15_16(year):
 
 def dis_17_18_csvs():
     for year in discipline_dict_2.keys():
-        if os.path.isfile(path+f'\discipline_{year}.csv') == True:
+        if os.path.isfile(os.getcwd()+f'\discipline_{year}.csv') == True:
             pass
         else:
             tabula.convert_into(discipline_dict_2[year],
@@ -284,7 +286,7 @@ Unemployment rates dataframe
 
 def unemprates_df():
 # Get the data
-    if os.path.isfile(path+ r'\unemp_rates.csv') == True:
+    if os.path.isfile(os.getcwd()+ r'\unemp_rates.csv') == True:
         pass
     else:
         unemp_rates = pd.read_excel('https://www.ers.usda.gov/webdocs/DataFiles/48747/Unemployment.xls?v=4751.8', header=7)
@@ -300,7 +302,7 @@ Educational attainment dataframe
 '''
 
 def edrates_df():
-    if os.path.isfile(path+ r'\ed_attainment.csv') == True:
+    if os.path.isfile(os.getcwd()+ r'\ed_attainment.csv') == True:
         pass
     else:
         ed = pd.read_excel('https://www.ers.usda.gov/webdocs/DataFiles/48747/Education.xls?v=4751.8', header=4)
@@ -333,12 +335,12 @@ def get_statement(url):
     else:
         fname = url.split('/')[-1]
         response = requests.get(url)
-        with open(os.path.join(path, fname), 'wb') as ofile:
+        with open(os.path.join(os.getcwd(), fname), 'wb') as ofile:
             ofile.write(response.content)
 def parse_pdf(a_pdf):
-    a_pdf = path + '\\' + a_pdf
+    a_pdf = os.getcwd() + '\\' + a_pdf
     fname = a_pdf.split('/')[-1]
-    with open(os.path.join(path, fname), 'rb') as ifile:
+    with open(os.path.join(os.getcwd(), fname), 'rb') as ifile:
         pdf_reader = PyPDF2.PdfFileReader(ifile)
         pages = [pdf_reader.getPage(p) for p in range(1,2)]
         pages = [p.extractText() for p in pages]
@@ -384,8 +386,8 @@ nonhisp[5] = 'Pacific'
 nonhisp[6] = 'Multiracial'
 
 def race_df(): # Imports race data by state
-    if os.path.isfile(path+f'\\race.csv') == True:
-        racedata = pd.read_csv(path+f'\\race.csv')
+    if os.path.isfile(os.getcwd()+f'\\race.csv') == True:
+        racedata = pd.read_csv(os.getcwd()+f'\\race.csv')
     else:
         racedata = pd.read_csv('https://www2.census.gov/programs-surveys/popest/tables/2010-2019/state/asrh/sc-est2019-alldata6.csv')
         racedata.to_csv('race.csv')
@@ -397,7 +399,7 @@ def race_df(): # Imports race data by state
 
 racedata = race_df()
 
-# Map in race names
+# Map in the race names
 racedata['Hisp'] = racedata['ORIGIN'].map(hisp)
 racedata['Nonhisp'] = racedata['RACE'].map(nonhisp)
 racedata['Race'] = racedata[['Nonhisp','Hisp']].apply(lambda x: ', '.join(x), axis=1)
@@ -421,21 +423,33 @@ def race_by_state(year):
 Merge dataframes
 '''
 
-def merge_it(year):
+def merge_it(year): # Merges dataframes for a given year
+# Initial merge of all dataframes except unemployment
     merged = pd.merge(passrates_df(year), povrates_df(year))
     merged = pd.merge(merged, get_disc(year))
     merged = pd.merge(merged, edrates_df())
     merged = pd.merge(merged, race_by_state(year))
-# Add columns for unemployment rate for given year
+# Add columns for unemployment rate and year
     unemp = unemprates_df()
     unemp = unemp[unemp['Jurisdiction'].isin(
 merged['Jurisdiction'])].reset_index(drop=True)
     merged['Unemployment_Rate'] = unemp[f'Unemployment_rate_{year}']/100
     merged['Year'] = year
+# Add state abbrevations
+    abbrs = us.states.mapping('abbr', 'name')
+    abbrs = pd.DataFrame.from_dict(abbrs, orient='index').reset_index()
+    abbrs.columns = ['Abbr', 'Jurisdiction']
+    merged = pd.merge(merged, abbrs)
     return(merged)
-# Note: this will drop US territories, leaving only states and Washington, D.C. It will also drop states for which no discipline data is avaiable through the ABA.
+# Note: the merge will drop US territories (which are in the bar passage rates dataframe), leaving only states and Washington, D.C.
 
-def merge_dfs(start, end):
+def final_export(final_df):
+     if os.path.isfile(os.getcwd()+'final_df.csv') == True:
+        pass
+     else:
+        final_df.to_csv('final_df.csv')
+
+def merge_dfs(start, end): # Combines all years into one dataframe
     dfs = []
     for year in range(start, end):
         merged = merge_it(year)
@@ -443,7 +457,11 @@ def merge_dfs(start, end):
     all = pd.concat(dfs, axis=0).reset_index(drop=True)
     return(all)
 
-alldata = merge_dfs(2015, 2019)
+alldata = merge_dfs(2015, 2018)
+# Look for outliers
+
+
+final_export(alldata)
 
 '''
 Regressions
@@ -480,22 +498,44 @@ model = sm.OLS(y, x).fit()
 predictions = model.predict(x)
 model.summary()
 
+avg = alldata.groupby('Abbr').mean().reset_index()
+
+x = avg[['Poverty_Rate', 'BA', 'White, Not Hispanic', 'Unemployment_Rate']]
+y = avg['Pass_Rate']
+x = sm.add_constant(x)
+model = sm.OLS(y, x).fit()
+predictions = model.predict(x)
+model.summary()
+
+x = alldata[['Poverty_Rate', 'BA', 'White, Not Hispanic']]
+y = alldata['Pass_Rate']
+x = sm.add_constant(x)
+model = sm.OLS(y, x).fit()
+predictions = model.predict(x)
+model.summary()
+
+
+
 '''
-Rudimentary plotting
+Plotting
 '''
 #https://jakevdp.github.io/PythonDataScienceHandbook/04.02-simple-scatter-plots.html
 
-avg = alldata.groupby('Jurisdiction').mean().reset_index()
-us.states.mapping('abbr', 'name')
-# Turn into dataframe and merge to get state abbreviations for visualization
-#abbr = pd.DataFrame.from_dict(us.states.mapping('abbr', 'name'), orient='index', columns=['Jurisdiction'])
-
+# Make dataframe with averages for all years, 2015-2018
+alldata = alldata.rename(columns={'BA':'Percent with BA'})
+avg = alldata.groupby('Abbr').mean().reset_index()
 avg = avg.sort_values('Poverty_Rate')
 
-fig, ax = plt.subplots()
-ax.plot(avg['Poverty_Rate'], avg['Pass_Rate'])
-ax.plot(avg['Jurisdiction'], avg['Poverty_Rate'])
+def scatter(x,y, color, a_title):
+    sns.set_style("darkgrid")
+    ax = sns.scatterplot(x,y, data=alldata, hue=color, s=50)
+    ax.set(xlabel='Poverty Rate', ylabel='Pass Rate', title=a_title)
+    yvals = ax.get_yticks() # Change ticks to percentages: solution at https://stackoverflow.com/questions/31357611/format-y-axis-as-percent
+    ax.set_yticklabels(['{:,.0%}'.format(y) for y in yvals])
+    xvals = ax.get_xticks()
+    ax.set_xticklabels(['{:,.0%}'.format(x) for x in xvals])
+
+scatter('Poverty_Rate', 'Pass_Rate', 'Percent with BA', 'State Bar Passage Rates Plotted Against Poverty Rates')
+scatter('Pass_Rate', 'Complaints_Per_Lawyer', 'Poverty_Rate', 'State Bar Passage Rates Plotted Against Complaints Per Lawyer')
 
 
-plt.plot(avg['Jurisdiction'], avg['Poverty_Rate'])
-plt.plot(avg['Jurisdiction'], avg['Pass_Rate'])
