@@ -159,6 +159,8 @@ def df_15b():
     dis15b['Num_Complaints'][15] = '2,098'
     dis15b['Jurisdiction'][3] = 'Montana'
     dis15b['Jurisdiction'][23] = 'Oregon'
+# Remove outlier in Complaints_Per_Lawyer: NH 2015
+    dis15b = dis15b[dis15b['Jurisdiction'] != 'New Hampshire']
     del dis15b['garbage']
     del dis15b['junk']
     return(dis15b)
@@ -455,44 +457,48 @@ def merge_dfs(start, end): # Combines all years into one dataframe
         merged = merge_it(year)
         dfs.append(merged)
     all = pd.concat(dfs, axis=0).reset_index(drop=True)
+    final_export(all)
     return(all)
 
 alldata = merge_dfs(2015, 2018)
-# Look for outliers
-
-
-final_export(alldata)
 
 '''
 Regressions
 '''
 
-x = alldata[['Takers', 'Pass_Rate', 'Poverty_Rate',
-       'Num_Lawyers', 'No_HS', 'HS', 'BA', 'Asian, Hispanic', 'Asian, Not Hispanic',
+# Make dataframe with averages for all years, 2015-2018
+alldata = alldata.rename(columns={'BA':'Percent with BA'})
+alldata.columns = alldata.columns.str.replace('_',' ')
+avg = alldata.groupby('Abbr').mean().reset_index()
+#avg = avg.sort_values('Poverty_Rate')
+
+
+x = alldata[['Takers', 'Pass Rate', 'Poverty Rate',
+       'Num Lawyers', 'No HS', 'HS', 'Percent with BA', 'Asian, Hispanic', 'Asian, Not Hispanic',
        'Black, Hispanic', 'Black, Not Hispanic', 'Multiracial, Hispanic',
        'Multiracial, Not Hispanic', 'Native, Hispanic', 'Native, Not Hispanic',
        'Pacific, Hispanic', 'Pacific, Not Hispanic', 'White, Hispanic',
-       'White, Not Hispanic', 'Unemployment_Rate', 'Year']]
-y = alldata['Complaints_Per_Lawyer']
+       'White, Not Hispanic', 'Unemployment Rate', 'Year']]
+y = alldata['Complaints Per Lawyer']
 x = sm.add_constant(x)
 model = sm.OLS(y, x).fit()
 predictions = model.predict(x)
 model.summary()
 
-x = alldata[['Takers', 'Poverty_Rate',
-       'Num_Lawyers', 'HS','BA', 'Asian, Hispanic', 'Asian, Not Hispanic',
+x = alldata[['Takers', 'Poverty Rate',
+       'Num Lawyers', 'HS','Percent with BA', 'Asian, Hispanic', 'Asian, Not Hispanic',
        'Black, Hispanic', 'Black, Not Hispanic', 'Multiracial, Hispanic',
        'Multiracial, Not Hispanic', 'Native, Hispanic', 'Native, Not Hispanic',
        'Pacific, Hispanic', 'Pacific, Not Hispanic', 'White, Hispanic',
-       'White, Not Hispanic', 'Unemployment_Rate', 'Year']]
-y = alldata['Pass_Rate']
+       'White, Not Hispanic', 'Unemployment Rate', 'Year']]
+y = alldata['Pass Rate']
 x = sm.add_constant(x)
 model = sm.OLS(y, x).fit()
 predictions = model.predict(x)
 model.summary()
 
-x = alldata[['Poverty_Rate', 'No_HS', 'HS', 'Some_Coll', 'BA', 'Asian, Hispanic', 'Asian, Not Hispanic', 'Black, Hispanic', 'Black, Not Hispanic', 'Multiracial, Hispanic', 'Multiracial, Not Hispanic', 'Native, Hispanic', 'Native, Not Hispanic', 'Pacific, Hispanic', 'Pacific, Not Hispanic', 'White, Hispanic', 'White, Not Hispanic', 'Unemployment_Rate']]
-y = alldata['Pass_Rate']
+x = alldata[['Poverty Rate', 'No HS', 'HS', 'Some Coll', 'Percent with BA', 'Asian, Hispanic', 'Asian, Not Hispanic', 'Black, Hispanic', 'Black, Not Hispanic', 'Multiracial, Hispanic', 'Multiracial, Not Hispanic', 'Native, Hispanic', 'Native, Not Hispanic', 'Pacific, Hispanic', 'Pacific, Not Hispanic', 'White, Hispanic', 'White, Not Hispanic', 'Unemployment Rate']]
+y = alldata['Pass Rate']
 x = sm.add_constant(x)
 model = sm.OLS(y, x).fit()
 predictions = model.predict(x)
@@ -500,42 +506,57 @@ model.summary()
 
 avg = alldata.groupby('Abbr').mean().reset_index()
 
-x = avg[['Poverty_Rate', 'BA', 'White, Not Hispanic', 'Unemployment_Rate']]
-y = avg['Pass_Rate']
+x = avg[['Poverty Rate', 'Percent with BA', 'White, Not Hispanic', 'Unemployment Rate']]
+y = avg['Pass Rate']
 x = sm.add_constant(x)
 model = sm.OLS(y, x).fit()
 predictions = model.predict(x)
 model.summary()
 
-x = alldata[['Poverty_Rate', 'BA', 'White, Not Hispanic']]
-y = alldata['Pass_Rate']
+x = alldata[['Poverty Rate', 'Percent with BA', 'White, Not Hispanic']]
+y = alldata['Pass Rate']
 x = sm.add_constant(x)
 model = sm.OLS(y, x).fit()
 predictions = model.predict(x)
 model.summary()
-
 
 
 '''
 Plotting
 '''
-#https://jakevdp.github.io/PythonDataScienceHandbook/04.02-simple-scatter-plots.html
 
-# Make dataframe with averages for all years, 2015-2018
-alldata = alldata.rename(columns={'BA':'Percent with BA'})
-avg = alldata.groupby('Abbr').mean().reset_index()
-avg = avg.sort_values('Poverty_Rate')
-
-def scatter(x,y, color, a_title):
+def scatter(x,y, color, a_df):
+    plt.figure() # Prevents piling plots on top of one another
     sns.set_style("darkgrid")
-    ax = sns.scatterplot(x,y, data=alldata, hue=color, s=50)
-    ax.set(xlabel='Poverty Rate', ylabel='Pass Rate', title=a_title)
+    ax = sns.scatterplot(x,y, data=a_df, hue=color, s=50)
+    ax.set(xlabel=x, ylabel=y, title=f'{x} Plotted Against {y}')
     yvals = ax.get_yticks() # Change ticks to percentages: solution at https://stackoverflow.com/questions/31357611/format-y-axis-as-percent
     ax.set_yticklabels(['{:,.0%}'.format(y) for y in yvals])
     xvals = ax.get_xticks()
     ax.set_xticklabels(['{:,.0%}'.format(x) for x in xvals])
+    plt.savefig(f'{x} vs. {y}.png')
 
-scatter('Poverty_Rate', 'Pass_Rate', 'Percent with BA', 'State Bar Passage Rates Plotted Against Poverty Rates')
-scatter('Pass_Rate', 'Complaints_Per_Lawyer', 'Poverty_Rate', 'State Bar Passage Rates Plotted Against Complaints Per Lawyer')
+def reg_plot(x,y, a_df):
+    plt.figure()
+    sns.set_style("darkgrid")
+    ax = sns.regplot(x,y, data=a_df)
+    ax.set(xlabel=x, ylabel=y, title=f'{x} Plotted Against {y} with Line of Best Fit')
+    yvals = ax.get_yticks()
+    ax.set_yticklabels(['{:,.0%}'.format(y) for y in yvals])
+    xvals = ax.get_xticks()
+    ax.set_xticklabels(['{:,.0%}'.format(x) for x in xvals])
+    plt.savefig(f'{x} vs. {y} regression.png')
+
+# Examine effect of poverty on passage rates
+scatter('Poverty Rate', 'Pass Rate', 'Percent with BA', alldata)
+reg_plot('Poverty Rate', 'Pass Rate', alldata)
+
+# Examine effect of unemployment on passage rates
+scatter('Unemployment Rate', 'Pass Rate', 'Poverty Rate', alldata)
+reg_plot('Unemployment Rate', 'Pass Rate', alldata)
+
+# Examine effect of passage rates on complaints per lawyer
+scatter('Pass Rate', 'Complaints Per Lawyer', 'Poverty Rate', alldata)
+reg_plot('Pass Rate', 'Complaints Per Lawyer', alldata)
 
 
