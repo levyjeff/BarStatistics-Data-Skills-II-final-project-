@@ -469,9 +469,6 @@ Regressions
 # Make dataframe with averages for all years, 2015-2018
 alldata = alldata.rename(columns={'BA':'Percent with BA'})
 alldata.columns = alldata.columns.str.replace('_',' ')
-avg = alldata.groupby('Abbr').mean().reset_index()
-#avg = avg.sort_values('Poverty_Rate')
-
 
 x = alldata[['Takers', 'Pass Rate', 'Poverty Rate',
        'Num Lawyers', 'No HS', 'HS', 'Percent with BA', 'Asian, Hispanic', 'Asian, Not Hispanic',
@@ -520,7 +517,6 @@ model = sm.OLS(y, x).fit()
 predictions = model.predict(x)
 model.summary()
 
-
 '''
 Plotting
 '''
@@ -554,6 +550,11 @@ reg_plot('Poverty Rate', 'Pass Rate', alldata)
 # Examine effect of unemployment on passage rates
 scatter('Unemployment Rate', 'Pass Rate', 'Poverty Rate', alldata)
 reg_plot('Unemployment Rate', 'Pass Rate', alldata)
+
+# Examine effect of race on passage rates
+scatter('White, Not Hispanic', 'Pass Rate', 'Poverty Rate', alldata)
+reg_plot('White, Not Hispanic', 'Pass Rate', alldata)
+
 
 # Examine effect of passage rates on complaints per lawyer
 scatter('Pass Rate', 'Complaints Per Lawyer', 'Poverty Rate', alldata)
