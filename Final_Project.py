@@ -4,7 +4,6 @@ Initial housekeeping
 
 import os
 import pandas as pd
-import numpy as np
 import us
 
 import requests
@@ -16,12 +15,13 @@ import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+
 nlp = spacy.load("en_core_web_sm")
 path = r'C:\Users\bethk\Desktop\Data_Skills_II\BarStatistics'
 os.chdir(path)
-headers = {'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36'}
 state_names = [state.name for state in us.states.STATES] # List comprehension adapted from https://stackoverflow.com/questions/47168881/how-to-get-a-list-of-us-state-names-from-us-1-0-0-package
 
+headers = {'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36'}
 
 '''
 Bar pass rate dataframe
@@ -146,7 +146,6 @@ def df_15a():
     del dis15a['junk']
     dis15a['Jurisdiction'][13] = 'Iowa'
     dis15a['Jurisdiction'][2] = 'Arizona'
-#    dis15a['Jurisdiction'][9] = 'Hawaii'
     return(dis15a)
 
 def df_15b():
@@ -279,9 +278,6 @@ def get_disc(year):
     a = finalize(a)
     return(a)
 
-get_disc(2015)
-# Hawaii has disappeared from 2017 and 2018 but we're getting close
-
 '''
 Unemployment rates dataframe
 '''
@@ -339,6 +335,7 @@ def get_statement(url):
         response = requests.get(url)
         with open(os.path.join(os.getcwd(), fname), 'wb') as ofile:
             ofile.write(response.content)
+
 def parse_pdf(a_pdf):
     a_pdf = os.getcwd() + '\\' + a_pdf
     fname = a_pdf.split('/')[-1]
@@ -437,11 +434,6 @@ def merge_it(year): # Merges dataframes for a given year
 merged['Jurisdiction'])].reset_index(drop=True)
     merged['Unemployment_Rate'] = unemp[f'Unemployment_rate_{year}']/100
     merged['Year'] = year
-# Add state abbrevations
-    abbrs = us.states.mapping('abbr', 'name')
-    abbrs = pd.DataFrame.from_dict(abbrs, orient='index').reset_index()
-    abbrs.columns = ['Abbr', 'Jurisdiction']
-    merged = pd.merge(merged, abbrs)
     return(merged)
 # Note: the merge will drop US territories (which are in the bar passage rates dataframe), leaving only states and Washington, D.C.
 
@@ -457,65 +449,52 @@ def merge_dfs(start, end): # Combines all years into one dataframe
         merged = merge_it(year)
         dfs.append(merged)
     all = pd.concat(dfs, axis=0).reset_index(drop=True)
+# Rename columns to prepare for plotting
+    all = all.rename(columns={'BA':'Percent with BA'})
+    all.columns = all.columns.str.replace('_',' ')
     final_export(all)
     return(all)
 
+# Make dataframe with averages for all years, 2015-2018
 alldata = merge_dfs(2015, 2018)
+print(alldata)
 
 '''
 Regressions
 '''
 
-# Make dataframe with averages for all years, 2015-2018
-alldata = alldata.rename(columns={'BA':'Percent with BA'})
-alldata.columns = alldata.columns.str.replace('_',' ')
+def regress(regressor, regressand):
+    x = regressor
+    y = regressand
+    x = sm.add_constant(x)
+    model = sm.OLS(y, x).fit()
+    print(model.summary())
 
-x = alldata[['Takers', 'Pass Rate', 'Poverty Rate',
+kitchen_sink_data_1 = alldata[['Takers', 'Pass Rate', 'Poverty Rate',
+       'Num Lawyers', 'No HS', 'HS', 'Percent with BA', 'Asian, Hispanic',
+       'Asian, Not Hispanic',
+       'Black, Hispanic', 'Black, Not Hispanic', 'Multiracial, Hispanic',
+       'Multiracial, Not Hispanic', 'Native, Hispanic', 'Native, Not Hispanic',
+       'Pacific, Hispanic', 'Pacific, Not Hispanic', 'White, Hispanic',
+       'White, Not Hispanic', 'Unemployment Rate']]
+kitchen_sink_data_2 = alldata[['Takers', 'Poverty Rate',
        'Num Lawyers', 'No HS', 'HS', 'Percent with BA', 'Asian, Hispanic', 'Asian, Not Hispanic',
        'Black, Hispanic', 'Black, Not Hispanic', 'Multiracial, Hispanic',
        'Multiracial, Not Hispanic', 'Native, Hispanic', 'Native, Not Hispanic',
        'Pacific, Hispanic', 'Pacific, Not Hispanic', 'White, Hispanic',
-       'White, Not Hispanic', 'Unemployment Rate', 'Year']]
-y = alldata['Complaints Per Lawyer']
-x = sm.add_constant(x)
-model = sm.OLS(y, x).fit()
-predictions = model.predict(x)
-model.summary()
+       'White, Not Hispanic', 'Unemployment Rate']]
 
-x = alldata[['Takers', 'Poverty Rate',
-       'Num Lawyers', 'HS','Percent with BA', 'Asian, Hispanic', 'Asian, Not Hispanic',
-       'Black, Hispanic', 'Black, Not Hispanic', 'Multiracial, Hispanic',
-       'Multiracial, Not Hispanic', 'Native, Hispanic', 'Native, Not Hispanic',
-       'Pacific, Hispanic', 'Pacific, Not Hispanic', 'White, Hispanic',
-       'White, Not Hispanic', 'Unemployment Rate', 'Year']]
-y = alldata['Pass Rate']
-x = sm.add_constant(x)
-model = sm.OLS(y, x).fit()
-predictions = model.predict(x)
-model.summary()
+# Complaints per lawyer regressions
+regress(kitchen_sink_data_1, alldata['Complaints Per Lawyer'])
+regress(alldata['Pass Rate'], alldata['Complaints Per Lawyer'])
 
-x = alldata[['Poverty Rate', 'No HS', 'HS', 'Some Coll', 'Percent with BA', 'Asian, Hispanic', 'Asian, Not Hispanic', 'Black, Hispanic', 'Black, Not Hispanic', 'Multiracial, Hispanic', 'Multiracial, Not Hispanic', 'Native, Hispanic', 'Native, Not Hispanic', 'Pacific, Hispanic', 'Pacific, Not Hispanic', 'White, Hispanic', 'White, Not Hispanic', 'Unemployment Rate']]
-y = alldata['Pass Rate']
-x = sm.add_constant(x)
-model = sm.OLS(y, x).fit()
-predictions = model.predict(x)
-model.summary()
-
-avg = alldata.groupby('Abbr').mean().reset_index()
-
-x = avg[['Poverty Rate', 'Percent with BA', 'White, Not Hispanic', 'Unemployment Rate']]
-y = avg['Pass Rate']
-x = sm.add_constant(x)
-model = sm.OLS(y, x).fit()
-predictions = model.predict(x)
-model.summary()
-
-x = alldata[['Poverty Rate', 'Percent with BA', 'White, Not Hispanic']]
-y = alldata['Pass Rate']
-x = sm.add_constant(x)
-model = sm.OLS(y, x).fit()
-predictions = model.predict(x)
-model.summary()
+# Pass rate regressions
+regress(kitchen_sink_data_2, alldata['Pass Rate'])
+regress(alldata['Black, Not Hispanic'], alldata['Pass Rate'])
+regress(alldata['White, Not Hispanic'], alldata['Pass Rate'])
+regress(alldata[['White, Not Hispanic', 'Poverty Rate']], alldata['Pass Rate'])
+regress(alldata[['White, Not Hispanic', 'Unemployment Rate']], alldata['Pass Rate'])
+regress(alldata['Percent with BA'], alldata['Pass Rate'])
 
 '''
 Plotting
@@ -555,9 +534,6 @@ reg_plot('Unemployment Rate', 'Pass Rate', alldata)
 scatter('White, Not Hispanic', 'Pass Rate', 'Poverty Rate', alldata)
 reg_plot('White, Not Hispanic', 'Pass Rate', alldata)
 
-
 # Examine effect of passage rates on complaints per lawyer
 scatter('Pass Rate', 'Complaints Per Lawyer', 'Poverty Rate', alldata)
 reg_plot('Pass Rate', 'Complaints Per Lawyer', alldata)
-
-
