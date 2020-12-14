@@ -445,7 +445,7 @@ def final_export(final_df):
 
 def merge_dfs(start, end): # Combines all years into one dataframe
     dfs = []
-    for year in range(start, end):
+    for year in range(start, end+1):
         merged = merge_it(year)
         dfs.append(merged)
     all = pd.concat(dfs, axis=0).reset_index(drop=True)
