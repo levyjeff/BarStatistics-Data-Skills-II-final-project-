@@ -15,6 +15,11 @@ import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+"""
+General grading comments:
+- Generally you shouldn't wrap return statements in parentheses - it works, but it makes them look like function calls
+- You put a ton of work into this and it shows.  Good job.
+"""
 
 nlp = spacy.load("en_core_web_sm")
 path = r'C:\Users\bethk\Desktop\Data_Skills_II\BarStatistics'
@@ -52,8 +57,8 @@ def create_list(a_table): # Makes a list from the table
     for a_row in unparsed_rows:
         for a_num in [3,4]:
             a_row[a_num] = a_row[a_num].replace(',','')
-            try:
-                int(a_row[a_num])
+            try: #JL: good exception capturing here
+                int(a_row[a_num]) #JL: you can also use isinstance(a_row[a_num], int) to test datatypes
             except ValueError:
                 a_row[a_num] = 0
     for a_row in unparsed_rows:
@@ -64,7 +69,7 @@ def create_list(a_table): # Makes a list from the table
 
 def build_df(a_list): # Makes a dataframe from the list
     the_df = pd.DataFrame(a_list, columns = ['Number', 'Jurisdiction', 'Month', 'Takers', 'Passers', 'Pass_Rate'])
-    del the_df['Number']
+    del the_df['Number'] #JL: can also be done with the drop method
     the_df = the_df.astype(dtype={'Takers':int, 'Passers':int})
     the_df['Pass_Rate'] = the_df['Passers']/the_df['Takers']
     the_df = the_df[the_df['Month'] == 'Total February and July']
@@ -197,13 +202,13 @@ def df_16c():
 def consolidate_dis_15_16(year):
     dis_15_16_csvs()
     if year == 2015:
-        a = df_15a()
+        a = df_15a() #JL: use more descriptive variable names
         b = df_15b()
         c = df_15c()
     elif year == 2016:
         a = df_16a()
         b = df_16b()
-        c = df_16c()
+        c = df_16c() #JL: when your code takes on this copy-paste structure, that usually means you can probably do it more efficiently with loops, containers, and/or functions
     dis_df = a.append(b).append(c).reset_index(drop=True)
     return(dis_df)
 
